@@ -5,20 +5,49 @@ import (
 	"RickAndMortyBackend/middleware"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // fallback for local
+	}
+
 	mux := http.NewServeMux()
 
-	mux.Handle("/characters", middleware.EnableCORS(http.HandlerFunc(controllers.GetCharacters)))
-	mux.Handle("/characters/{id}", middleware.EnableCORS(http.HandlerFunc(controllers.GetCharacterByID)))
+	// Characters
+	mux.Handle("/characters/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/characters" || r.URL.Path == "/characters/" {
+			controllers.GetCharacters(w, r)
+		} else if strings.HasPrefix(r.URL.Path, "/characters/") {
+			controllers.GetCharacterByID(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})))
 
-	mux.Handle("/locations", middleware.EnableCORS(http.HandlerFunc(controllers.GetLocations)))
-	mux.Handle("/locations/{id}", middleware.EnableCORS(http.HandlerFunc(controllers.GetLocationByID)))
+	mux.Handle("/locations/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/locations" || r.URL.Path == "/locations/" {
+			controllers.GetLocations(w, r)
+		} else if strings.HasPrefix(r.URL.Path, "/locations/") {
+			controllers.GetLocationByID(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})))
 
-	mux.Handle("/episodes", middleware.EnableCORS(http.HandlerFunc(controllers.GetEpisodes)))
-	mux.Handle("/episodes/{id}", middleware.EnableCORS(http.HandlerFunc(controllers.GetEpisodeByID)))
+	mux.Handle("/episodes/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/episodes" || r.URL.Path == "/episodes/" {
+			controllers.GetEpisodes(w, r)
+		} else if strings.HasPrefix(r.URL.Path, "/episodes/") {
+			controllers.GetEpisodeByID(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})))
 
-	log.Println("Server started on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Println("Server started on port", port)
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }

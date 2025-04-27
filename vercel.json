@@ -1,12 +1,10 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "index.go",
-      "use": "@vercel/go"
-    }
+    { "src": "api/index.go", "use": "@vercel/go" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "index.go" }
+    { "src": "/(.*)", "dest": "/api/index.go" }
   ]
 }
+

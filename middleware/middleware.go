@@ -12,15 +12,16 @@ func EnableCORS(next http.Handler) http.Handler {
 		log.Printf("CORS: Middleware ENTRY for %s %s", r.Method, r.URL.RequestURI())
 
 		// Set common CORS headers
-		w.Header().Set("Access-Control-Allow-Origin", "*") // Or your specific origin
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // Fallback, but less ideal
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization") //  Include Authorization if you use it
 		w.Header().Set("Access-Control-Max-Age", "86400")                             // Add Max-Age for caching
-
-		//Important Note:  The provided solution removed the check for OPTIONS and always sets the headers.
-		//             This is done because the user's frontend was sending GET requests instead of OPTIONS for preflight.
-		//             If you are sure that OPTIONS requests are being sent correctly from the client, you should handle OPTIONS separately
-		//             and avoid setting headers for every request.
 
 		// Log header setting
 		log.Printf("CORS: Headers SET for %s %s", r.Method, r.URL.RequestURI())

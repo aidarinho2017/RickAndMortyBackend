@@ -12,6 +12,11 @@ var mux *http.ServeMux
 func init() {
 	mux = http.NewServeMux()
 
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Rick and Morty Backend API is running 🚀"))
+	})
+
 	mux.Handle("/characters/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/characters" || r.URL.Path == "/characters/" {
 			controllers.GetCharacters(w, r)

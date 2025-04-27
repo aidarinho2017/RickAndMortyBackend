@@ -1,23 +1,17 @@
-package main
+package handler
 
 import (
 	"RickAndMortyBackend/controllers"
 	"RickAndMortyBackend/middleware"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 )
 
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // fallback for local
-	}
+var mux *http.ServeMux
 
-	mux := http.NewServeMux()
+func init() {
+	mux = http.NewServeMux()
 
-	// Characters
 	mux.Handle("/characters/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/characters" || r.URL.Path == "/characters/" {
 			controllers.GetCharacters(w, r)
@@ -47,7 +41,8 @@ func main() {
 			http.NotFound(w, r)
 		}
 	})))
+}
 
-	log.Println("Server started on port", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+func Handler(w http.ResponseWriter, r *http.Request) {
+	mux.ServeHTTP(w, r)
 }

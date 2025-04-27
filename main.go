@@ -31,7 +31,7 @@ func main() {
 			controllers.GetCharacterByID(w, r) // Assumes this extracts ID from r.URL.Path
 		} else if path == "/characters" {
 			log.Printf("Routing to GetCharacters for path: %s", r.URL.Path)
-			controllers.GetCharacters(w) // Corrected:  GetCharacters now takes only w
+			controllers.GetCharacters(w, r) // Corrected:  GetCharacters now takes only w
 		} else {
 			http.NotFound(w, r)
 		}

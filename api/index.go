@@ -19,7 +19,7 @@ func init() {
 
 	mux.Handle("/characters/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/characters" || r.URL.Path == "/characters/" {
-			controllers.GetCharacters(w)
+			controllers.GetCharacters(w, r)
 		} else if strings.HasPrefix(r.URL.Path, "/characters/") {
 			controllers.GetCharacterByID(w, r)
 		} else {

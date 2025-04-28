@@ -1,9 +1,9 @@
 [build]
   functions = "netlify/functions"
-  publish = "build"
+  command = "echo 'No build command needed'"
+  publish = "."
 
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
-  force = true

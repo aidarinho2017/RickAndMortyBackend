@@ -59,3 +59,5 @@ func handleEpisodes(w http.ResponseWriter, r *http.Request) {
 func Handler(w http.ResponseWriter, r *http.Request) {
 	middleware.EnableCORS(mux).ServeHTTP(w, r)
 }
+
+func main() {}

@@ -1,12 +1,7 @@
 [build]
-  functions = "netlify/functions"
-  command = "echo 'No build command needed'"
-  publish = "."
-
-[build.environment]
-  GO_VERSION = "1.22"
+functions = "netlify/functions"
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
+from = "/api/*"
+to = "/.netlify/functions/api/:splat"
+status = 200

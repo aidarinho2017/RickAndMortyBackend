@@ -3,6 +3,9 @@
   command = "echo 'No build command needed'"
   publish = "."
 
+[build.environment]
+  GO_VERSION = "1.22"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"

@@ -3,7 +3,6 @@ package main
 import (
 	"RickAndMortyBackend/controllers"
 	"RickAndMortyBackend/middleware"
-	"context"
 	"net/http"
 	"strings"
 )
@@ -13,15 +12,12 @@ var mux *http.ServeMux
 func init() {
 	mux = http.NewServeMux()
 
-	// Characters
 	mux.Handle("/characters", http.HandlerFunc(handleCharacters))
 	mux.Handle("/characters/", http.HandlerFunc(handleCharacters))
 
-	// Locations
 	mux.Handle("/locations", http.HandlerFunc(handleLocations))
 	mux.Handle("/locations/", http.HandlerFunc(handleLocations))
 
-	// Episodes
 	mux.Handle("/episodes", http.HandlerFunc(handleEpisodes))
 	mux.Handle("/episodes/", http.HandlerFunc(handleEpisodes))
 }
@@ -59,7 +55,7 @@ func handleEpisodes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// This is the Netlify entrypoint
-func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+// Correct Netlify serverless Go function handler
+func Handler(w http.ResponseWriter, r *http.Request) {
 	middleware.EnableCORS(mux).ServeHTTP(w, r)
 }

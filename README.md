@@ -7,7 +7,7 @@
 
 ### `go mod tidy`
 чтобы скачать все dependencies
-### `go run main.go`
+### `go run .`
 для запуска
 
 http://localhost:3000 - будет доступно здесь

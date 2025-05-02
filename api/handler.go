@@ -24,7 +24,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Health-check at "/" (i.e. /api)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("Rick and Morty API is up 🚀"))
+		w.Write([]byte("Rick and Morty API is working!"))
 	})
 
 	// List endpoints

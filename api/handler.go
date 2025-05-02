@@ -2,52 +2,90 @@ package handler
 
 import (
 	"RickAndMortyBackend/controllers"
-	"RickAndMortyBackend/middleware"
 	"net/http"
 	"strings"
 )
 
-var mux *http.ServeMux
-
-func init() {
-	mux = http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("Rick and Morty Backend API is running 🚀"))
-	})
-
-	mux.Handle("/characters/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/characters" || r.URL.Path == "/characters/" {
-			controllers.GetCharacters(w, r)
-		} else if strings.HasPrefix(r.URL.Path, "/characters/") {
-			controllers.GetCharacterByID(w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})))
-
-	mux.Handle("/locations/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/locations" || r.URL.Path == "/locations/" {
-			controllers.GetLocations(w, r)
-		} else if strings.HasPrefix(r.URL.Path, "/locations/") {
-			controllers.GetLocationByID(w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})))
-
-	mux.Handle("/episodes/", middleware.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/episodes" || r.URL.Path == "/episodes/" {
-			controllers.GetEpisodes(w, r)
-		} else if strings.HasPrefix(r.URL.Path, "/episodes/") {
-			controllers.GetEpisodeByID(w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})))
+// Handler is the main entry point for Vercel’s Go serverless function.
+// It implements http.HandlerFunc and is invoked for every API request.
+func Handler(w http.ResponseWriter, r *http.Request) {
+	routeHandler(w, r)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	mux.ServeHTTP(w, r)
+// routeHandler inspects the URL path and dispatches to the appropriate controller.
+func routeHandler(w http.ResponseWriter, r *http.Request) {
+	// CORS headers (example)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	// Handle CORS preflight
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	// Normalize path: remove the "/api" prefix if present.
+	path := r.URL.Path
+	if strings.HasPrefix(path, "/api/") {
+		path = strings.TrimPrefix(path, "/api")
+	}
+	path = strings.Trim(path, "/")
+	segments := strings.Split(path, "/")
+
+	// Basic routing logic
+	if len(segments) == 0 || segments[0] == "" {
+		http.NotFound(w, r)
+		return
+	}
+	switch segments[0] {
+	case "characters":
+		if r.Method == http.MethodGet {
+			if len(segments) == 1 {
+				// GET /api/characters
+				controllers.GetCharacters(w, r)
+				return
+			} else if len(segments) == 2 {
+				// GET /api/characters/:id
+				// Pass the id (e.g. via query parameters) before calling handler
+				q := r.URL.Query()
+				q.Set("id", segments[1])
+				r.URL.RawQuery = q.Encode()
+				controllers.GetCharacterByID(w, r)
+				return
+			}
+		}
+	case "locations":
+		if r.Method == http.MethodGet {
+			if len(segments) == 1 {
+				// GET /api/locations
+				controllers.GetLocations(w, r)
+				return
+			} else if len(segments) == 2 {
+				// GET /api/locations/:id
+				q := r.URL.Query()
+				q.Set("id", segments[1])
+				r.URL.RawQuery = q.Encode()
+				controllers.GetLocationByID(w, r)
+				return
+			}
+		}
+	case "episodes":
+		if r.Method == http.MethodGet {
+			if len(segments) == 1 {
+				// GET /api/episodes
+				controllers.GetEpisodes(w, r)
+				return
+			} else if len(segments) == 2 {
+				// GET /api/episodes/:id
+				q := r.URL.Query()
+				q.Set("id", segments[1])
+				r.URL.RawQuery = q.Encode()
+				controllers.GetEpisodeByID(w, r)
+				return
+			}
+		}
+	}
+	// If no route matches:
+	http.NotFound(w, r)
 }

@@ -1,9 +1,12 @@
+
+
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/handler.go", "use": "@vercel/go" }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/handler.go" }
+  "build": {
+    "env": {
+      "GO_BUILD_FLAGS": "-ldflags '-s -w'"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/handler.go" }
   ]
 }

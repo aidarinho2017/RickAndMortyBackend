@@ -9,6 +9,19 @@ import (
 	"strings"
 )
 
+func routeHandler(basePath string, listHandler, detailHandler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimSuffix(r.URL.Path, "/")
+		if path == basePath {
+			listHandler(w, r)
+		} else if strings.HasPrefix(path, basePath+"/") {
+			detailHandler(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	}
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -17,63 +30,19 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// --- Define Handlers ---
+	// Register all handlers in one line each
+	mux.Handle("/characters", routeHandler("/characters", controllers.GetCharacters, controllers.GetCharacterByID))
+	mux.Handle("/characters/", routeHandler("/characters", controllers.GetCharacters, controllers.GetCharacterByID))
 
-	charactersHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimSuffix(r.URL.Path, "/")
+	mux.Handle("/locations", routeHandler("/locations", controllers.GetLocations, controllers.GetLocationByID))
+	mux.Handle("/locations/", routeHandler("/locations", controllers.GetLocations, controllers.GetLocationByID))
 
-		// Correct handling: /characters and /characters/{id}
-		if path == "/characters" {
-			log.Printf("Routing to GetCharacters (list) for path: %s", r.URL.Path)
-			controllers.GetCharacters(w, r)
-		} else if strings.HasPrefix(path, "/characters/") {
-			log.Printf("Routing to GetCharacterByID for path: %s", r.URL.Path)
-			controllers.GetCharacterByID(w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})
+	mux.Handle("/episodes", routeHandler("/episodes", controllers.GetEpisodes, controllers.GetEpisodeByID))
+	mux.Handle("/episodes/", routeHandler("/episodes", controllers.GetEpisodes, controllers.GetEpisodeByID))
 
-	locationsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimSuffix(r.URL.Path, "/")
-
-		if path == "/locations" {
-			controllers.GetLocations(w, r)
-		} else if strings.HasPrefix(path, "/locations/") {
-			controllers.GetLocationByID(w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})
-
-	episodesHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimSuffix(r.URL.Path, "/")
-
-		if path == "/episodes" {
-			controllers.GetEpisodes(w, r)
-		} else if strings.HasPrefix(path, "/episodes/") {
-			controllers.GetEpisodeByID(w, r)
-		} else {
-			http.NotFound(w, r)
-		}
-	})
-
-	// --- Register Handlers ---
-
-	mux.Handle("/characters", charactersHandler)
-	mux.Handle("/characters/", charactersHandler)
-
-	mux.Handle("/locations", locationsHandler)
-	mux.Handle("/locations/", locationsHandler)
-
-	mux.Handle("/episodes", episodesHandler)
-	mux.Handle("/episodes/", episodesHandler)
-
-	// --- Wrap everything with CORS middleware ---
-
+	// Apply CORS
 	corsEnabledMux := middleware.EnableCORS(mux)
 
 	log.Println("Server starting on port", port)
-
 	log.Fatal(http.ListenAndServe(":"+port, corsEnabledMux))
 }

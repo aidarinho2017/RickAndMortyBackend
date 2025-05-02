@@ -1,91 +1,63 @@
+// api/index.go
 package handler
 
 import (
 	"RickAndMortyBackend/controllers"
+	"RickAndMortyBackend/middleware"
 	"net/http"
 	"strings"
 )
 
-// Handler is the main entry point for Vercel’s Go serverless function.
-// It implements http.HandlerFunc and is invoked for every API request.
+// Handler is the Vercel entrypoint for any /api/* request.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	routeHandler(w, r)
-}
-
-// routeHandler inspects the URL path and dispatches to the appropriate controller.
-func routeHandler(w http.ResponseWriter, r *http.Request) {
-	// CORS headers (example)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-	// Handle CORS preflight
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	// Normalize path: remove the "/api" prefix if present.
+	// 1) Strip "/api" prefix so our ServeMux sees "/characters", "/episodes/123", etc.
 	path := r.URL.Path
-	if strings.HasPrefix(path, "/api/") {
+	if strings.HasPrefix(path, "/api") {
 		path = strings.TrimPrefix(path, "/api")
 	}
-	path = strings.Trim(path, "/")
-	segments := strings.Split(path, "/")
+	r2 := r.Clone(r.Context())
+	r2.URL.Path = path
 
-	// Basic routing logic
-	if len(segments) == 0 || segments[0] == "" {
-		http.NotFound(w, r)
-		return
-	}
-	switch segments[0] {
-	case "characters":
-		if r.Method == http.MethodGet {
-			if len(segments) == 1 {
-				// GET /api/characters
-				controllers.GetCharacters(w, r)
-				return
-			} else if len(segments) == 2 {
-				// GET /api/characters/:id
-				// Pass the id (e.g. via query parameters) before calling handler
-				q := r.URL.Query()
-				q.Set("id", segments[1])
-				r.URL.RawQuery = q.Encode()
-				controllers.GetCharacterByID(w, r)
-				return
-			}
-		}
-	case "locations":
-		if r.Method == http.MethodGet {
-			if len(segments) == 1 {
-				// GET /api/locations
-				controllers.GetLocations(w, r)
-				return
-			} else if len(segments) == 2 {
-				// GET /api/locations/:id
-				q := r.URL.Query()
-				q.Set("id", segments[1])
-				r.URL.RawQuery = q.Encode()
-				controllers.GetLocationByID(w, r)
-				return
-			}
-		}
-	case "episodes":
-		if r.Method == http.MethodGet {
-			if len(segments) == 1 {
-				// GET /api/episodes
-				controllers.GetEpisodes(w, r)
-				return
-			} else if len(segments) == 2 {
-				// GET /api/episodes/:id
-				q := r.URL.Query()
-				q.Set("id", segments[1])
-				r.URL.RawQuery = q.Encode()
-				controllers.GetEpisodeByID(w, r)
-				return
-			}
-		}
-	}
-	// If no route matches:
-	http.NotFound(w, r)
+	// 2) Build a ServeMux and register all routes
+	mux := http.NewServeMux()
+
+	// Health-check at "/" (i.e. /api)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Rick and Morty API is up 🚀"))
+	})
+
+	// List endpoints
+	mux.HandleFunc("/characters", controllers.GetCharacters)
+	mux.HandleFunc("/locations", controllers.GetLocations)
+	mux.HandleFunc("/episodes", controllers.GetEpisodes)
+
+	// Detail endpoints: extract the ID and rewrite it into r.URL.Query()
+	mux.HandleFunc("/characters/", func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimPrefix(r.URL.Path, "/characters/")
+		q := r.URL.Query()
+		q.Set("id", id)
+		r = r.Clone(r.Context())
+		r.URL.RawQuery = q.Encode()
+		controllers.GetCharacterByID(w, r)
+	})
+	mux.HandleFunc("/locations/", func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimPrefix(r.URL.Path, "/locations/")
+		q := r.URL.Query()
+		q.Set("id", id)
+		r = r.Clone(r.Context())
+		r.URL.RawQuery = q.Encode()
+		controllers.GetLocationByID(w, r)
+	})
+	mux.HandleFunc("/episodes/", func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimPrefix(r.URL.Path, "/episodes/")
+		q := r.URL.Query()
+		q.Set("id", id)
+		r = r.Clone(r.Context())
+		r.URL.RawQuery = q.Encode()
+		controllers.GetEpisodeByID(w, r)
+	})
+
+	// 3) Wrap the mux with CORS middleware and serve
+	middleware.EnableCORS(mux).ServeHTTP(w, r2)
 }
